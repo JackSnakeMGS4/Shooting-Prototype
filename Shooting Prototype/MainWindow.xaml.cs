@@ -50,6 +50,7 @@ namespace Shooting_Prototype
             playerY = Canvas.GetBottom(player);//player is 0 
             playerTopY = playerY + player.Height;//set playerTop to 40
 
+            //next three lines are the game loop
             update.Tick += Update_Tick;
             update.Interval = TimeSpan.FromMilliseconds(1000 / framesPerSecond);
             update.Start();
@@ -58,7 +59,7 @@ namespace Shooting_Prototype
         private void Update_Tick(object sender, EventArgs e)
         {       
             MoveAll();//calling MoveAll() first so projectile are actually fired from the player's current position
-            if (Keyboard.IsKeyDown(Key.V) && shots.Count < shotLimit)//is fired when V is pressed or held down
+            if (Keyboard.IsKeyDown(Key.V) && shots.Count != shotLimit)//is fired when V is pressed or held down
             {
                 //running into an with the shots freezing in mid air if V is pressed multiple times or held down
                 DrawProjectiles(projectileWidth, projectileHeight, Colors.Firebrick, Colors.White, 2,
@@ -90,15 +91,19 @@ namespace Shooting_Prototype
 
                         Canvas.SetBottom(projectile, projectileY + GAP_BETWEEN_PROJECTILES);//sets projectile's bottom to new projectileY
                         projectile.Visibility = Visibility.Visible;//makes projectile visible after it's set
-                    }                    
+                    }
                 }
-                //trying to figure out how to limit the player to only 5 shot bursts. I'm on the right path just not at the end yet
-                if (projectileY > gameCanvas.Height)
+                foreach (Rectangle projectile in shots)
                 {
-                    shots.Remove(projectile);
+                    //managed to limit the player to five shots but now I want remove each individual shot from my list and the canvas as they pass the canvas's boundaries
+                    if (Canvas.GetBottom(shots.Last(projectile)) /*Canvas.GetBottom(projectile)*/ > gameCanvas.Height)
+                    {
+                        shots.Remove(projectile);
+                        gameCanvas.Children.Remove(projectile);
+                    }
                 }
-            }
-            
+              
+            }           
 
             //next two if statements are for the player movement on the x-axis and will fire if the player is within the game boundaries
             if (Keyboard.IsKeyDown(Key.A) && playerX > 0)
