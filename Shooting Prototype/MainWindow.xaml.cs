@@ -33,7 +33,7 @@ namespace Shooting_Prototype
         private int projectileWidth = 10;//for projectile's width
         private int projectileHeight = 10;//for projectile's height
         private double projectileCenterX;//for projectile x-axis center
-        private double projectileY;//for projectil bottom most point
+        private double projectileY;//for projectile's bottom most point
         private int projectileSpeedY = 10;//rate at which projectile moves
         private const double GAP_BETWEEN_PROJECTILES = 2.5;//creates a gap between shots so it looks more natural
         private int shotLimit = 5;//limits the player to only shooting 5 shots
@@ -61,7 +61,7 @@ namespace Shooting_Prototype
             MoveAll();//calling MoveAll() first so projectile are actually fired from the player's current position
             if (Keyboard.IsKeyDown(Key.V) && shots.Count != shotLimit)//is fired when V is pressed or held down
             {
-                //running into an with the shots freezing in mid air if V is pressed multiple times or held down
+                //running into an with the shots freezing in mid air if V is pressed multiple times or held down: SOLVED 03/29/2018
                 DrawProjectiles(projectileWidth, projectileHeight, Colors.Firebrick, Colors.White, 2,
                     playerCenterX - (projectileWidth / 2)/*sets location of shot's center to the center of the player*/,
                     playerTopY/*sets the location of the shot's bottom point*/);
@@ -132,7 +132,7 @@ namespace Shooting_Prototype
              * something like this: List<Rectangle> shotsList = new List<Rectangle>();
              * That way I can added multiple objects to it and loop through the list and fire
              * the ones that in the list and then I should remove them from the list once they go
-             * off screen
+             * off screen: SOLVED 03/29/18
              */
             projectile = new Rectangle();
             projectile.Visibility = Visibility.Hidden;
