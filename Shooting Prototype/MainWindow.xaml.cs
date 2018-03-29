@@ -22,7 +22,7 @@ namespace Shooting_Prototype
     public partial class MainWindow : Window
     {
         private DispatcherTimer update = new DispatcherTimer();
-        private int framesPerSecond = 120;
+        private int framesPerSecond = 90;
 
         private double playerX;//for player position
         private double playerCenterX;//for player's center
@@ -31,11 +31,15 @@ namespace Shooting_Prototype
         private double playerSpeedX = 7;
 
         private int projectileWidth = 10;//for projectile's width
-        private int projectileHeight = 20;//for projectile's height
+        private int projectileHeight = 10;//for projectile's height
         private double projectileCenterX;//for projectile x-axis center
         private double projectileY;//for projectil bottom most point
         private int projectileSpeedY = 10;//rate at which projectile moves
+        private const double GAP_BETWEEN_PROJECTILES = 2.5;//creates a gap between shots so it looks more natural
+        private int shotLimit = 5;//limits the player to only shooting 5 shots
+
         private Rectangle projectile;//let's me reference the projectile outside of the drawing function
+        private List<Rectangle> shots = new List<Rectangle>();//list that contains each individual instance of the rectangle class
 
         public MainWindow()
         {
@@ -54,12 +58,13 @@ namespace Shooting_Prototype
         private void Update_Tick(object sender, EventArgs e)
         {       
             MoveAll();//calling MoveAll() first so projectile are actually fired from the player's current position
-            if (Keyboard.IsKeyDown(Key.V))//is fired when V is pressed or held down
+            if (Keyboard.IsKeyDown(Key.V) && shots.Count < shotLimit)//is fired when V is pressed or held down
             {
                 //running into an with the shots freezing in mid air if V is pressed multiple times or held down
                 DrawProjectiles(projectileWidth, projectileHeight, Colors.Firebrick, Colors.White, 2,
                     playerCenterX - (projectileWidth / 2)/*sets location of shot's center to the center of the player*/,
                     playerTopY/*sets the location of the shot's bottom point*/);
+                shots.Add(projectile);//adds the instance of the shot to the list
             }
         }
 
@@ -67,21 +72,29 @@ namespace Shooting_Prototype
         {
             playerCenterX = playerX + (player.Width / 2);//player's x-axis center is 200
 
-            if (projectile != null)//fires only if projectile isn't null
-            {               
-                projectileCenterX = Canvas.GetLeft(projectile);//get the updated x-coord for the projectile
-                projectileY = Canvas.GetBottom(projectile);//get the updated y-coord for the projectile which is always the same since the player doesn't move up or down
+            ////next line checks if projectile bottom is past the play area height
+            //if (projectileY > gameCanvas.Height)
+            //{
+            //    projectile = null;//makes projectile null if it goes off the top of the play area
+            //}
+            foreach (Rectangle projectile in shots)//loops through the list of rectangles and applies the if statement to each invdividual instance
+            {
+                if (projectile != null)//fires only if projectile isn't null
+                {
+                    projectileCenterX = Canvas.GetLeft(projectile);//get the updated x-coord for the projectile
+                    projectileY = Canvas.GetBottom(projectile);//get the updated y-coord for the projectile which is always the same since the player doesn't move up or down
 
-                projectileY += projectileSpeedY;//adds projectileSpeed to projectileY
-               
-                Canvas.SetBottom(projectile, projectileY);//sets projectile's bottom to new projectileY
-                projectile.Visibility = Visibility.Visible;//makes projectile visible after it's set
+                    projectileY += projectileSpeedY;//adds projectileSpeed to projectileY
+
+                    Canvas.SetBottom(projectile, projectileY + GAP_BETWEEN_PROJECTILES);//sets projectile's bottom to new projectileY
+                    projectile.Visibility = Visibility.Visible;//makes projectile visible after it's set
+                }
             }
-           
-            //next line checks if projectile bottom is past the play area height
+
+            //trying to figure out how to limit the player to only 5 shot bursts. I'm on the right path just not at the end yet
             if (projectileY > gameCanvas.Height)
             {
-                projectile = null;//makes projectile null if it goes off the top of the play area
+                shots.Remove(projectile);
             }
 
             //next two if statements are for the player movement on the x-axis and will fire if the player is within the game boundaries
