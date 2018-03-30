@@ -22,13 +22,13 @@ namespace Shooting_Prototype
     public partial class MainWindow : Window
     {
         private DispatcherTimer update = new DispatcherTimer();
-        private int framesPerSecond = 10;
+        private int framesPerSecond = 120;//no lagging in this house
 
         private double playerX;//for player position
         private double playerCenterX;//for player's center
         private double playerY;//for player's feet
         private double playerTopY;//for player's head
-        private double playerSpeedX = 7;
+        private double playerSpeedX = 7;//sets speed for player's horizontal movement
 
         private int projectileWidth = 10;//for projectile's width
         private int projectileHeight = 10;//for projectile's height
@@ -36,7 +36,7 @@ namespace Shooting_Prototype
         private double projectileY;//for projectile's bottom most point
         private int projectileSpeedY = 10;//rate at which projectile moves
         private const double GAP_BETWEEN_PROJECTILES = 2.5;//creates a gap between shots so it looks more natural
-        private int shotLimit = 5;//limits the player to only shooting 5 shots
+        private int shotLimit = 5;//limits the player to only having 5 shots on screen at any given time
 
         private Rectangle projectile;//let's me reference the projectile outside of the drawing function
         private List<Rectangle> shots = new List<Rectangle>();//list that contains each individual instance of the rectangle class
@@ -59,7 +59,7 @@ namespace Shooting_Prototype
         private void Update_Tick(object sender, EventArgs e)
         {       
             MoveAll();//calling MoveAll() first so projectile are actually fired from the player's current position
-            if (Keyboard.IsKeyDown(Key.V) && shots.Count != shotLimit)//is fired when V is pressed or held down
+            if (Keyboard.IsKeyDown(Key.V) && shots.Count < shotLimit)//is fired when V is pressed or held down
             {
                 //running into an with the shots freezing in mid air if V is pressed multiple times or held down: SOLVED 03/29/2018
                 DrawProjectiles(projectileWidth, projectileHeight, Colors.Firebrick, Colors.White, 2,
@@ -73,36 +73,51 @@ namespace Shooting_Prototype
         {
             playerCenterX = playerX + (player.Width / 2);//player's x-axis center is 200
 
-            ////next line checks if projectile bottom is past the play area height
-            //if (projectileY > gameCanvas.Height)
-            //{
-            //    projectile = null;//makes projectile null if it goes off the top of the play area
-            //}
+            ////next line fires if the number of elements in the shots list is greater than 0
             if (shots.Count > 0)
-            {
-                foreach (Rectangle projectile in shots)//loops through the list of rectangles and applies the if statement to each invdividual instance
+            {                          
+                /*Note to self: issue with me checking each individual shot's bottom and deleting them as each one goes off screen was 
+                 * SOLVED 03/30/18 with the advice of an experienced software engineer from Microsoft
+                 */
+                for (int indexOfProjectile = 0; indexOfProjectile < shots.Count; indexOfProjectile++)
                 {
-                    if (projectile != null)//fires only if projectile isn't null
+                    /*in this for loop I'm looping through each index in the shots list
+                     * I then check for the actual element rather than the index by calling ElementAt()
+                     * passing it the index that I want to check
+                     * the first if statement then checks if the index is not null
+                     * if that holds true then it will update the x and y coords for each projectile
+                     * the first if statement must be checked before I check and remove shots that are off screen.
+                     * If I flipped it around then I would get exception that occurs by removing the object from list
+                     * and then trying to check for an index that is no longer contained in the list
+                     */
+                    if (shots.ElementAt(indexOfProjectile) != null)//fires only if projectile isn't null
                     {
-                        projectileCenterX = Canvas.GetLeft(projectile);//get the updated x-coord for the projectile
-                        projectileY = Canvas.GetBottom(projectile);//get the updated y-coord for the projectile which is always the same since the player doesn't move up or down
+                        //next line gets the updated x-coord for the projectile
+                        projectileCenterX = Canvas.GetLeft(shots.ElementAt(indexOfProjectile));
+                        //next line gets the updated y-coord for the projectile's bottom which is always the same since the player doesn't move up or down
+                        projectileY = Canvas.GetBottom(shots.ElementAt(indexOfProjectile));
 
                         projectileY += projectileSpeedY;//adds projectileSpeed to projectileY
 
-                        Canvas.SetBottom(projectile, projectileY + GAP_BETWEEN_PROJECTILES);//sets projectile's bottom to new projectileY
-                        projectile.Visibility = Visibility.Visible;//makes projectile visible after it's set
+                        Canvas.SetBottom(shots.ElementAt(indexOfProjectile), projectileY + GAP_BETWEEN_PROJECTILES);//sets projectile's bottom to new projectileY
+                        projectile.Visibility = Visibility.Visible;//makes projectile visible after it's set.
                     }
-                }
-                foreach (Rectangle projectile in shots)
-                {
-                    //managed to limit the player to five shots but now I want remove each individual shot from my list and the canvas as they pass the canvas's boundaries
-                    if (Canvas.GetBottom(shots.Last(projectile)) /*Canvas.GetBottom(projectile)*/ > gameCanvas.Height)
+                   
+                    /* Okay so this part was the biggest hassle in the entire program.
+                     * It's job is to check each individual shots and compare their bottom property which has been
+                     * updated thanks to the previous statement. If the shots bottom value is greater
+                     * than the height value of the canvas then it will first remove it from the canvas
+                     * after that is done then it will be removed from the shots list.
+                     * The issue I was running into earlier this week was that I was removing 
+                     * the index from the list first and then trying to use that index, which no 
+                     * longer existed as, as the index to remove from the canvas
+                     */
+                    if (Canvas.GetBottom(shots.ElementAt(indexOfProjectile)) > gameCanvas.Height)
                     {
-                        shots.Remove(projectile);
-                        gameCanvas.Children.Remove(projectile);
-                    }
-                }
-              
+                        gameCanvas.Children.Remove(shots.ElementAt(indexOfProjectile));
+                        shots.Remove(shots.ElementAt(indexOfProjectile));
+                    }          
+                }     
             }           
 
             //next two if statements are for the player movement on the x-axis and will fire if the player is within the game boundaries
@@ -115,6 +130,7 @@ namespace Shooting_Prototype
                 playerX += playerSpeedX;
             }
 
+            //next line sets the player's position based on their input
             Canvas.SetLeft(player, playerX);
         }
 
@@ -124,6 +140,7 @@ namespace Shooting_Prototype
              * hides the shot then sets it width/height
              * sets outline color, thickness of outline, and inner color
              * sets shot's position based on the updated player's x and y coords
+             * final line actually adds the rectangle to the canvas
              */
             /*Note to self: Issue is occuring somewhere here in conjunction with the 
              * event handler for the V key because the variable refers to only one object at any given time
